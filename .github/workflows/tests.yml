@@ -16,17 +16,17 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: 22.x
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
     - name: Get code
       uses: actions/checkout@v4
 
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node.js ${{ node-version }}
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: ${{ node-version }}
 
     - name: Setup Python
       uses: actions/setup-python@v5.3.0
@@ -43,3 +43,9 @@ jobs:
 
     - name: Run E2E Tests
       run: robot -d ./logs -i smoke tests
+    
+    - name: Robot Reporter
+      uses: joonvena/robotframework-reporter-action@v2.4
+      with:
+        gh_access_token: ${{ secrets.GITHUB_TOKEN }}
+        report_path: logs
