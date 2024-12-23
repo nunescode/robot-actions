@@ -1,7 +1,4 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
-name: Node.js CI
+name: E2E Tests
 
 on:
   push:
@@ -10,14 +7,13 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  chrome:
 
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         node-version: [22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
     - name: Get code
@@ -42,7 +38,7 @@ jobs:
       run: rfbrowser init
 
     - name: Run E2E Tests
-      run: robot -d ./logs tests
+      run: robot -d ./logs -v BROWSER:chromium tests
     
     - name: Robot Reporter
       uses: joonvena/robotframework-reporter-action@v2.4
@@ -57,3 +53,50 @@ jobs:
       with:
         name: Tests report
         path: logs
+
+  firefox:
+
+      runs-on: ubuntu-latest
+
+      strategy:
+        matrix:
+          node-version: [22.x]
+
+      steps:
+      - name: Get code
+        uses: actions/checkout@v4.2.2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5.3.0
+        with:
+          python-version: 3.12
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Browser Init
+        run: rfbrowser init
+
+      - name: Run E2E Tests
+        run: robot -d ./logs -v BROWSER:firefox tests
+      
+      - name: Robot Reporter
+        uses: joonvena/robotframework-reporter-action@v2.4
+        if: always()
+        with:
+          gh_access_token: ${{ secrets.GITHUB_TOKEN }}
+          report_path: logs
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v4.5.0
+        if: always()
+        with:
+          name: Tests report
+          path: logs
